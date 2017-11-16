@@ -13,6 +13,7 @@ DROP TRIGGER RECIPIENTTRIGGER;
 CREATE TABLE PROFILE (
   userID varchar2(20),
   name varchar2(50) NOT NULL,
+  email varchar2(50) NOT NULL,
   password varchar2(50) NOT NULL,
   date_of_birth date NOT NULL,
   lastlogin timestamp,
@@ -95,7 +96,10 @@ CREATE OR REPLACE TRIGGER RECIPIENTTRIGGER
     messageId varchar2(20);
     recipUser varchar2(20);
   BEGIN
-    SELECT msgID INTO messageId, toUserID INTO recipUser
+    SELECT msgID INTO messageId
+    FROM MESSAGES
+    WHERE msgID = :new.msgID;
+    SELECT toUserID INTO recipUser
     FROM MESSAGES
     WHERE msgID = :new.msgID;
     INSERT INTO MESSAGERECIPIENT VALUES(messageId, recipUser);
