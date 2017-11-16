@@ -91,17 +91,22 @@ CREATE TABLE PENDINGGROUPMEMEBERS (
 CREATE OR REPLACE TRIGGER RECIPIENTTRIGGER
   AFTER INSERT
   on MESSAGES
-  FOR EACH ROW
   DECLARE
     messageId varchar2(20);
     recipUser varchar2(20);
   BEGIN
     SELECT msgID INTO messageId
     FROM MESSAGES
-    WHERE msgID = :new.msgID;
+    WHERE msgID = (
+        SELECT MAX(msgID)
+        FROM MESSAGES
+    );
     SELECT toUserID INTO recipUser
     FROM MESSAGES
-    WHERE msgID = :new.msgID;
+    WHERE msgID = (
+        SELECT MAX(msgID)
+        FROM MESSAGES
+    );
     INSERT INTO MESSAGERECIPIENT VALUES(messageId, recipUser);
   END;
   /
