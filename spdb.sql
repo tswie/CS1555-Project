@@ -95,17 +95,11 @@ CREATE OR REPLACE TRIGGER RECIPIENTTRIGGER
     messageId varchar2(20);
     recipUser varchar2(20);
   BEGIN
-    SELECT msgID INTO messageId
+    SELECT msgID, toUserID INTO messageId, recipUser
     FROM MESSAGES
     WHERE msgID = (
-        SELECT MAX(msgID)
-        FROM MESSAGES
-    );
-    SELECT toUserID INTO recipUser
-    FROM MESSAGES
-    WHERE msgID = (
-        SELECT MAX(msgID)
-        FROM MESSAGES
+      SELECT MAX(TO_NUMBER(msgID))
+      FROM MESSAGES
     );
     INSERT INTO MESSAGERECIPIENT VALUES(messageId, recipUser);
   END;
