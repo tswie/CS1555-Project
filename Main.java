@@ -1,5 +1,11 @@
 //Need 100 users, 200 friendships, 10 groups, 300 messages
 
+/*
+	Created by Tomasz Swierzewski on 11/16/2017
+	Compile with javac Main.java
+	Run with java Main > "insert.sql"
+*/
+
 import java.util.ArrayList;
 import java.util.Random;
 import java.sql.Date;
