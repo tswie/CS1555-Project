@@ -3,14 +3,14 @@ import java.sql.Timestamp;
 
 class Profile{
 	
-	private final String userID;
+	private final int userID;
 	private final String name;
 	private final String email;
 	private final String password;
-	private final Date dateOfBirth;
-	private final Timestamp lastlogin;
+	private final String dateOfBirth;
+	private final String lastlogin;
 	
-	public Profile(String userId, String name, String email, String password, Date dateOfBirth, Timestamp lastlogin){
+	public Profile(int userID, String name, String email, String password, String dateOfBirth, String lastlogin){
 		
 		this.userID = userID;
 		this.name = name;
@@ -24,11 +24,15 @@ class Profile{
 	public String makeInsertStatement(){
 		return "insert into profile(userID, name, email, password, date_of_birth, lastlogin) values(" + "'" + 
 		userID + "', '" + 
-		name + ", '" + 
-		email + ", '" + 
-		password + "', '" + 
-		dateOfBirth + "', '" +
-		lastlogin + "');"
+		name + "', '" + 
+		email + "', '" + 
+		password + "', " + 
+		"TO_DATE('" + dateOfBirth + "', 'YYYY-MM-DD')," +
+		"TO_TIMESTAMP('" + lastlogin + "', 'YYYY-MM-DD HH24:MI.SS.FF'));";
 		
+	}
+	
+	public int getUserID(){
+		return userID;
 	}
 }

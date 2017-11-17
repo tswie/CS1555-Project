@@ -62,7 +62,7 @@ class Main{
 		}
 		
 		//Create messages, not necessarily between friends
-		Messages[] messages = new Messages[100];
+		Messages[] messages = new Messages[300];
 		for (int i = 0; i<messages.length; i++){
 			int k = r.nextInt(100) + 1;
 			int j = k;
