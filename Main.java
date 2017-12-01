@@ -63,7 +63,7 @@ class Main{
 		//Create groups, no need to populate
 		Groups[] groups = new Groups[10];
 		for (int i = 0; i<groups.length; i++){
-			groups[i] = new Groups(i+1, getRandomMessage(20), getRandomMessage(80));
+			groups[i] = new Groups(i+1, getRandomMessage(20), getRandomMessage(80), getRandomLimit());
 			System.out.println(groups[i].makeInsertStatement());
 		}
 		
@@ -112,6 +112,11 @@ class Main{
 		//System.out.println(email);
 		
 		return email.toString();
+	}
+
+	private static int getRandomLimit(){
+		Random r = new Random();
+		return r.nextInt(5) + 3;
 	}
 	
 	private static String getRandomPassword() {

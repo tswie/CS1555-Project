@@ -86,6 +86,7 @@ public class FaceSpaceManagement {
 			connection.commit();
 			resultSet.close();
 			loggedInUserID = newUserID;
+			System.out.println("Created new user with UserID: " + newUserID);
 			return true;
 		}
 		catch(SQLIntegrityConstraintViolationException ve) {
@@ -141,6 +142,73 @@ public class FaceSpaceManagement {
 	}
 
 	public synchronized void initiateFriendship(){
+
+		int friendID = 0; String message; boolean loop = true; String userResponse;
+
+		try {
+			connection.setAutoCommit(false);
+			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+
+			while (loop) {
+				System.out.println(
+					"Please enter the ID of the friend you'd like to make: ");
+				friendID = s.nextInt();
+
+				query = "Select name from profile where userID = ?";
+				prepStatement = connection.prepareStatement(query);
+				prepStatement.setInt(1, friendID);
+				resultSet = prepStatement.executeQuery();
+
+				/*
+					Error handling block, checks to make sure the profile exists,
+					then checks to make sure the user found the right person,
+					then checks to make sure they're not already friends
+				 */
+				if (!resultSet.next()) {
+					System.out.println(
+						"UserID " + friendID + " not found, please try again.");
+				} else {
+					//Confirm user choice
+					System.out.println("You'd like to send a friend request to " + resultSet.getString(1)
+						                   + ", is this correct? Enter 'yes' or 'no' without quotes");
+					userResponse = s.nextLine();
+					userResponse = s.nextLine();
+					if (userResponse.equals("yes")) {
+						//Checks to make sure they're not already friends, returns to main menu
+						//if so.
+						if (checkIfFriend(friendID)){
+							System.out.println("You are already friends with this person, " +
+								"returning to main menu.");
+							return;
+						}
+						loop = false;
+					} else {
+						//User input does not confirm if profile is what they wanted, restarts
+						//the loop
+						continue;
+					}
+				}
+				//END error handling
+			}
+
+
+			System.out.println("Now enter the message you'd like to send along with the request: ");
+			message = s.nextLine();
+
+			query = "insert into pendingFriends values (?, ?, ?)";
+			prepStatement = connection.prepareStatement(query);
+			prepStatement.setInt(1, loggedInUserID);
+			prepStatement.setInt(2, friendID);
+			prepStatement.setString(3, message);
+			prepStatement.executeUpdate();
+			connection.commit();
+			System.out.println("Friend request successfully sent");
+			resultSet.close();
+			return;
+		} catch (Exception e){
+			System.out.println("Failed to add friend");
+			e.printStackTrace();
+		}
 
 	}
 
@@ -243,6 +311,38 @@ public class FaceSpaceManagement {
 
 	public void logOut(){
 
+	}
+
+	//Helper method for creating a friend request
+	public boolean checkIfFriend(int friendID){
+		try {
+			query = "SELECT * from friends where userID1 = ? and userID2 = ?";
+			prepStatement = connection.prepareStatement(query);
+			prepStatement.setInt(1, loggedInUserID);
+			prepStatement.setInt(2, friendID);
+			resultSet = prepStatement.executeQuery();
+
+			//If result found, friendship already exists, return true
+			if (resultSet.isBeforeFirst()) {
+				return true;
+			}
+
+			//Check to see if IDs were flipped (if they are friends but their ID's were stored
+			//in the opposite fields
+			prepStatement = connection.prepareStatement(query);
+			prepStatement.setInt(1, friendID);
+			prepStatement.setInt(2, loggedInUserID);
+			resultSet = prepStatement.executeQuery();
+
+			if (resultSet.isBeforeFirst()) {
+				return true;
+			} else {
+				return false;
+			}
+		} catch (java.sql.SQLException e){
+			e.printStackTrace();
+			return true;
+		}
 	}
 
 	public void disconnect() {
