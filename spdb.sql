@@ -16,8 +16,9 @@ CREATE TABLE PROFILE (
   email varchar2(50) NOT NULL,
   password varchar2(50) NOT NULL,
   date_of_birth date NOT NULL,
-  lastlogin timestamp,
-  CONSTRAINT PK_PROFILE PRIMARY KEY (userID)
+  lastlogin timestamp DEFAULT NULL,
+  CONSTRAINT PK_PROFILE PRIMARY KEY (userID),
+  CONSTRAINT UN_PROFILE UNIQUE (email)
 );
 
 /* Assumes that each friend pair is only stored once ex (John, Mary) == (Mary, John) */
