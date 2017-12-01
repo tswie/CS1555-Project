@@ -13,6 +13,7 @@ public class FaceSpaceManagement {
 	private ResultSet resultSet; //used to hold the result of your query (if one exists)
 	private String query;  //this will hold the query we are using
 	private Scanner s = new Scanner(System.in);
+	private int loggedInUserID;
 
 	/*
 		Initiates DB Connection
@@ -47,7 +48,7 @@ public class FaceSpaceManagement {
 			statement = connection.createStatement();
 
 			query = "SELECT max(userID) from profile";
-			ResultSet resultSet = statement.executeQuery(query);
+			resultSet = statement.executeQuery(query);
 			resultSet.next();
 			int newUserID = resultSet.getInt(1);
 			newUserID++;
@@ -84,6 +85,7 @@ public class FaceSpaceManagement {
 			prepStatement.executeUpdate();
 			connection.commit();
 			resultSet.close();
+			loggedInUserID = newUserID;
 			return true;
 		}
 		catch(SQLIntegrityConstraintViolationException ve) {
@@ -111,15 +113,31 @@ public class FaceSpaceManagement {
 			password = s.nextLine();
 
 			query = "select userID from profile where email = ? and password = ?";
+			prepStatement = connection.prepareStatement(query);
+			prepStatement.setString(1, email);
+			prepStatement.setString(2, password);
+			resultSet = prepStatement.executeQuery();
 
+			int counter = 0;
+			int currentID = 0;
+			while(resultSet.next()) {
+				counter++;
+				currentID = resultSet.getInt(1);
+			}
+
+			if(counter == 1) {
+				loggedInUserID = currentID;
+				System.out.println("Log In Successful");
+				System.out.println("Log In ID : " + loggedInUserID);
+				return true;
+			}
 		}
 		catch(Exception e) {
 			System.out.println("Incorrect username or password.");
+			e.printStackTrace();
 		}
 
-
-
-		return true;
+		return false;
 	}
 
 	public synchronized void initiateFriendship(){
@@ -135,6 +153,55 @@ public class FaceSpaceManagement {
 	}
 
 	public synchronized void createGroup(){
+
+		try {
+			String gName, description;
+			int limit;
+
+			connection.setAutoCommit(false); //We want every createUser call to be its own transaction
+			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+			statement = connection.createStatement();
+
+			query = "SELECT max(gID) from groups";
+			ResultSet resultSet = statement.executeQuery(query);
+			resultSet.next();
+			int newGID = resultSet.getInt(1);
+			newGID++;
+
+			System.out.print("Name the New Group : ");
+			gName = s.nextLine();
+			System.out.print("Enter a Description for the Group : ");
+			description = s.nextLine();
+			System.out.print("Enter the Membership Limit for the Group : ");
+			limit = s.nextInt();
+
+			query = "insert into groups values (?, ?, ?, ?)";
+			prepStatement = connection.prepareStatement(query);
+
+			prepStatement.setInt(1, newGID);
+			prepStatement.setString(2, gName);
+			prepStatement.setString(3, description);
+			prepStatement.setInt(4, limit);
+			prepStatement.executeUpdate();
+
+			query = "insert into groupmembership values (?, ?, ?)";
+			prepStatement = connection.prepareStatement(query);
+
+			prepStatement.setInt(1, newGID);
+			prepStatement.setInt(2, loggedInUserID);
+			prepStatement.setString(3, "manager");
+			prepStatement.setInt(4, limit);
+
+			prepStatement.executeUpdate();
+			connection.commit();
+		}
+		catch(Exception e) {
+			System.out.println("Failed to Create Group");
+			e.printStackTrace();
+		}
+	}
+
+	public void confirmGroupMembers() {
 
 	}
 
@@ -177,4 +244,12 @@ public class FaceSpaceManagement {
 	public void logOut(){
 
 	}
+
+	public void disconnect() {
+			try {
+				connection.close();
+			} catch (Exception E){
+				System.out.println("Connection couldn't close: " + E.toString());
+			}
+		}
 }
