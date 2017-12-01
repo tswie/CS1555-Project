@@ -90,7 +90,7 @@ public class SocialPanther {
           default:
             System.out.println("Pick one of the options!\n");
         }
-      }while(choice != 14);
+      }while(choice != 15);
     }
   }
 

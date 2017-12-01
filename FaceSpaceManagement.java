@@ -181,7 +181,7 @@ public class FaceSpaceManagement {
 			prepStatement.setInt(1, newGID);
 			prepStatement.setString(2, gName);
 			prepStatement.setString(3, description);
-			prepStatement.setInt(4, limit);
+			prepStatement.setString(4, String.valueOf(limit));
 			prepStatement.executeUpdate();
 
 			query = "insert into groupmembership values (?, ?, ?)";
@@ -190,7 +190,7 @@ public class FaceSpaceManagement {
 			prepStatement.setInt(1, newGID);
 			prepStatement.setInt(2, loggedInUserID);
 			prepStatement.setString(3, "manager");
-			prepStatement.setInt(4, limit);
+
 
 			prepStatement.executeUpdate();
 			connection.commit();
