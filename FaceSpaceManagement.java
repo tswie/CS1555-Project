@@ -402,7 +402,7 @@ public class FaceSpaceManagement {
 			connection.setAutoCommit(false);
 			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 
-			query = "Update profile set lastlogin = NOW() where userID = ?";
+			query = "Update profile set lastlogin = LOCALTIMESTAMP(6) where userID = ?";
 			prepStatement = connection.prepareStatement(query);
 			prepStatement.setInt(1, loggedInUserID);
 			prepStatement.executeUpdate();
