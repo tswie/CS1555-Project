@@ -214,7 +214,7 @@ public class FaceSpaceManagement {
 	}
 
 	public synchronized void confirmFriendship(){
-		int counter = 1; int choice = 0;
+		/*int counter = 1; int choice = 0;
 		boolean friendRequests = true;
 		boolean groupRequests = true;
 
@@ -223,11 +223,11 @@ public class FaceSpaceManagement {
 			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 
 			while(true) {
-				query = "Select fromID, message from pendingFriends where toID"
+				query = "Select fromID, message from pendingFriends where toID";
 			}
 		} catch (Exception e){
 			e.printStackTrace();
-		}
+		}*/
 	}
 
 	public synchronized void displayFriends(){
@@ -236,10 +236,11 @@ public class FaceSpaceManagement {
 		int input;
 		int choice;
 
-		connect.setAutoCommit(false);
-		connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+
 		while(true) {
 			try {
+				connection.setAutoCommit(false);
+				connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 				resultSet = getFriends(loggedInUserID);
 
 				if (!resultSet.isBeforeFirst()) {
@@ -374,10 +375,20 @@ public class FaceSpaceManagement {
 
 	}
 
-	public void logOut(){
+	public void logOut() {
+		try {
+			connection.setAutoCommit(false);
+			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 
+			query = "Update profile set lastlogin = NOW() where userID = ?";
+			prepStatement = connection.prepareStatement(query);
+			prepStatement.setInt(1, loggedInUserID);
+			prepStatement.executeUpdate();
+			connection.commit();
+		} catch (Exception e){
+			e.printStackTrace();
+		}
 	}
-
 	//Helper method for creating a friend request
 	public boolean checkIfFriend(int friendID){
 		try {
@@ -412,56 +423,62 @@ public class FaceSpaceManagement {
 
 	//Helper method for finding friends lists
 	public ResultSet getFriends(int ID){
-		connection.setAutoCommit(false);
-		connect.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+
 		int input;
 		try {
+			connection.setAutoCommit(false);
+			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 			query = "Select unique userID, name from profile where userID = " +
 					        "(select userID1 from friends where userID2 = " + loggedInUserID + ") or " +
 					        "(select userID2 from friends where userID1 = " + loggedInUserID + ")";
 			prepStatement = connection.prepareStatement(query);
 			resultSet = prepStatement.executeQuery();
 
-			return resultSet;
-
 			if (!resultSet.isBeforeFirst()) {
 				System.out.println("No friends found");
-				return;
+				return null;
+			} else {
+				return resultSet;
+			}
+		} catch (Exception e){
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	//Helper method for browsing the friends of a friend
+	public void browseFriends(int ID){
+		resultSet = getFriends(ID);
+		int input;
+		if (resultSet == null){
+			System.out.println("No friends found");
+			return;
+		}
+		try {
+			while (true) {
+				connection.setAutoCommit(false);
+				connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+				while (resultSet.next()) {
+					System.out.println("\nUser ID: " + resultSet.getInt(1));
+					System.out.println("User Name: " + resultSet.getString(2));
+				}
+
+				System.out.println("Select the userID whose profile you'd like to see, or 0 to return your friends");
+				input = s.nextInt();
+				if (input == 0) { return;
+				} else { printProfile(input);
+				}
 			}
 		} catch (Exception e){
 			e.printStackTrace();
 		}
 	}
 
-	//Helper method for browsing the friends of a friend
-	public void browseFriends(int ID){
-		connection.setAutoCommit(false);
-		connect.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-		resultSet = getFriends(ID);
-		if (resultSet = null){
-			System.out.println("No friends found");
-			return;
-		}
-		while(true) {
-			while (resultSet.next()) {
-				System.out.println("\nUser ID: " + resultSet.getInt(1));
-				System.out.println("User Name: " + resultSet.getString(2));
-			}
-
-			System.out.println("Select the userID whose profile you'd like to see, or 0 to return your friends");
-			input = s.nextInt();
-			if (input == 0) {
-				return;
-			} else {
-				printProfile(input);
-			}
-		}
-	}
-
 	public void printProfile(int ID){
-		connection.setAutoCommit(false);
-		connect.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+
 		try {
+			connection.setAutoCommit(false);
+			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 			query = "SELECT name, date_of_birth, lastlogin from profile where userID = ?";
 			prepStatement = connection.prepareStatement(query);
 			prepStatement.setInt(1, ID);
