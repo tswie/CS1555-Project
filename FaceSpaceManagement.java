@@ -352,7 +352,29 @@ public class FaceSpaceManagement {
 	}
 
 	public synchronized void displayMessages(){
+		try {
 
+			connection.setAutoCommit(false);
+			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+
+			query = "Select fromID, message from messages where toID = ?";
+			prepStatement = connection.prepareStatement(query);
+			prepStatement.setInt(1, loggedInUserID);
+			resultSet = prepStatement.executeQuery();
+
+			if (!resultSet.isBeforeFirst()){
+				System.out.println("No messages found");
+				return;
+			}
+
+			while (resultSet.next()){
+				System.out.println("\nFrom userID: " + resultSet.getInt(1));
+				System.out.println("Message contents: " + resultSet.getString(2));
+			}
+			return;
+		} catch (Exception e){
+			e.printStackTrace();
+		}
 	}
 
 	public synchronized void displayNewMessages(){
