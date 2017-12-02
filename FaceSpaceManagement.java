@@ -231,18 +231,27 @@ public class FaceSpaceManagement {
 	}
 
 	public synchronized void displayFriends(){
-		int counter = 0;
+		int counter = 1;
 		boolean loop = true;
 		int input;
 		int choice;
 
+		try{
+			connection.setAutoCommit(false);
+			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+		} catch (Exception e){
+			e.printStackTrace();
+		}
 
 		while(true) {
 			try {
-				connection.setAutoCommit(false);
-				connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+
 				resultSet = getFriends(loggedInUserID);
 
+				if (resultSet == null){
+					System.out.println("No friends found");
+					return;
+				}
 				if (!resultSet.isBeforeFirst()) {
 					System.out.println("No friends found");
 					return;
@@ -250,9 +259,9 @@ public class FaceSpaceManagement {
 				System.out.println("Here are your friends: \n");
 				while (resultSet.next()) {
 					System.out.println(counter++ + ")");
-					System.out.println(
+					System.out.println("UserID: " +
 						resultSet.getInt(1));
-					System.out.println(
+					System.out.println("Name: " +
 						resultSet.getString(2) + "\n");
 				}
 
@@ -451,9 +460,11 @@ public class FaceSpaceManagement {
 			connection.setAutoCommit(false);
 			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 			query = "Select unique userID, name from profile where userID = " +
-					        "(select userID1 from friends where userID2 = " + loggedInUserID + ") or " +
-					        "(select userID2 from friends where userID1 = " + loggedInUserID + ")";
+					        "(select userID1 from friends where userID2 = ?) or " +
+					        "userID = (select userID2 from friends where userID1 = ?)";
 			prepStatement = connection.prepareStatement(query);
+			prepStatement.setInt(1, loggedInUserID);
+			prepStatement.setInt(2, loggedInUserID);
 			resultSet = prepStatement.executeQuery();
 
 			if (!resultSet.isBeforeFirst()) {
@@ -476,10 +487,16 @@ public class FaceSpaceManagement {
 			System.out.println("No friends found");
 			return;
 		}
+
+		try{
+			connection.setAutoCommit(false);
+			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+		} catch (Exception e){
+			e.printStackTrace();
+		}
 		try {
 			while (true) {
-				connection.setAutoCommit(false);
-				connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+
 				while (resultSet.next()) {
 					System.out.println("\nUser ID: " + resultSet.getInt(1));
 					System.out.println("User Name: " + resultSet.getString(2));
