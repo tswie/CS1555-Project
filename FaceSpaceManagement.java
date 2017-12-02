@@ -2,6 +2,7 @@ import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Scanner;
+import java.util.ArrayList;
 
 
 
@@ -213,11 +214,75 @@ public class FaceSpaceManagement {
 	}
 
 	public synchronized void confirmFriendship(){
+		int counter = 1; int choice = 0;
+		boolean friendRequests = true;
+		boolean groupRequests = true;
 
+		try{
+			connection.setAutoCommit(false);
+			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+
+			while(true) {
+				query = "Select fromID, message from pendingFriends where toID"
+			}
+		} catch (Exception e){
+			e.printStackTrace();
+		}
 	}
 
 	public synchronized void displayFriends(){
+		int counter = 0;
+		boolean loop = true;
+		int input;
+		int choice;
 
+		connect.setAutoCommit(false);
+		connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+		while(true) {
+			try {
+				resultSet = getFriends(loggedInUserID);
+
+				if (!resultSet.isBeforeFirst()) {
+					System.out.println("No friends found");
+					return;
+				}
+				System.out.println("Here are your friends: \n");
+				while (resultSet.next()) {
+					System.out.println(counter++ + ")");
+					System.out.println(
+						resultSet.getInt(1));
+					System.out.println(
+						resultSet.getString(2) + "\n");
+				}
+
+				System.out.println(
+					"Enter the userID you're interested in, or 0 to return to main menu");
+				choice = s.nextInt();
+				if (choice == 0) {
+					connection.commit();
+					return;
+				} else {
+					System.out.println("Would you like to\n" +
+						"1.)Browse this user's friends\n" +
+						"2.)See this user's profile\n" +
+						"3.)Go back to browsing your friends");
+					input = s.nextInt();
+					switch (input){
+						case 1:
+							browseFriends(choice);
+							break;
+						case 2:
+							printProfile(choice);
+							break;
+						case 3:
+							continue;
+					}
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	public synchronized void createGroup(){
@@ -345,6 +410,76 @@ public class FaceSpaceManagement {
 		}
 	}
 
+	//Helper method for finding friends lists
+	public ResultSet getFriends(int ID){
+		connection.setAutoCommit(false);
+		connect.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+		int input;
+		try {
+			query = "Select unique userID, name from profile where userID = " +
+					        "(select userID1 from friends where userID2 = " + loggedInUserID + ") or " +
+					        "(select userID2 from friends where userID1 = " + loggedInUserID + ")";
+			prepStatement = connection.prepareStatement(query);
+			resultSet = prepStatement.executeQuery();
+
+			return resultSet;
+
+			if (!resultSet.isBeforeFirst()) {
+				System.out.println("No friends found");
+				return;
+			}
+		} catch (Exception e){
+			e.printStackTrace();
+		}
+	}
+
+	//Helper method for browsing the friends of a friend
+	public void browseFriends(int ID){
+		connection.setAutoCommit(false);
+		connect.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+		resultSet = getFriends(ID);
+		if (resultSet = null){
+			System.out.println("No friends found");
+			return;
+		}
+		while(true) {
+			while (resultSet.next()) {
+				System.out.println("\nUser ID: " + resultSet.getInt(1));
+				System.out.println("User Name: " + resultSet.getString(2));
+			}
+
+			System.out.println("Select the userID whose profile you'd like to see, or 0 to return your friends");
+			input = s.nextInt();
+			if (input == 0) {
+				return;
+			} else {
+				printProfile(input);
+			}
+		}
+	}
+
+	public void printProfile(int ID){
+		connection.setAutoCommit(false);
+		connect.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+		try {
+			query = "SELECT name, date_of_birth, lastlogin from profile where userID = ?";
+			prepStatement = connection.prepareStatement(query);
+			prepStatement.setInt(1, ID);
+			resultSet = prepStatement.executeQuery();
+			if (!resultSet.next()) {
+				System.out.println("Profile not found");
+				return;
+			}
+			System.out.println(
+				"Name: " + resultSet.getString(1) +
+					"\nDate of Birth: " + resultSet.getDate(2) +
+					"\nLast login: " + resultSet.getTimestamp(3));
+			return;
+		} catch (Exception e){
+			e.printStackTrace();
+		}
+	}
+
 	public void disconnect() {
 			try {
 				connection.close();
@@ -353,3 +488,101 @@ public class FaceSpaceManagement {
 			}
 		}
 }
+
+/*
+	Deprecated supporting code for confirmFriends, purely for my own reference later - Tomasz
+	//Get friend request count
+				query = "Select count(fromID) from pendingFriends where toID = ?";
+				prepStatement = connection.prepareStatement(query);
+				prepStatement.setInt(1, loggedInUserID);
+				resultSet = prepStatement.executeQuery();
+
+				if (!resultSet.next()){
+					System.out.println("No pending friend requests");
+					friendRequests = false;
+				}
+
+				//Get group request count
+				query = "Select count(gID) from pendingGroupMembers where toID = ?";
+				prepStatement = connection.prepareStatement(query);
+				prepStatement.setInt(1, loggedInUserID);
+				resultSet = prepStatement.executeQuery();
+
+				if (!resultSet.next()){
+					System.out.println("No pending group requests");
+					groupRequests = false;
+					if (!groupRequests && !friendRequests){
+						System.out.println("No group or friend requests, returning to main menu");
+						return;
+					}
+				}
+
+				//Check if friend requests exist
+				if (friendRequests == true) {
+
+					query = "Select fromID, message from pendingFriends where toID = ?";
+					prepStatement = connection.prepareStatement(query);
+					prepStatement.setInt(1, loggedInUserID);
+					resultSet = prepStatement.executeQuery();
+
+					while (resultSet.next()){
+						System.out.println(counter++ + ".)");
+						System.out.println("UserID: " + resultSet.getInt(1));
+						System.out.println("Message: "+ resultSet.getString(2) + "\n");
+					}
+				}
+
+				//Check if group requests exist
+				if (groupRequests == true){
+
+					query = "Select gID, message from pendingGroupMembers where toID = ?";
+					prepStatement = connection.prepareStatement(query);
+					prepStatement.setInt(1, loggedInUserID);
+					resultSet = prepStatement.executeQuery();
+
+					while (resultSet.next()){
+						System.out.println(counter++ + ".)");
+						System.out.println("GroupID: g" + resultSet.getInt(1));
+						System.out.println("Message: " + resultSet.getString(2) + "\n");
+					}
+				}
+
+
+				System.out.println("Please enter the ID of the request you'd like to accept, or 0 to exit." +
+					"\nIf you're choosing a group invite, please type the negative of the group ID number");;
+
+				if (choice == 0){
+					System.out.println("Returning to main menu");
+					return;
+				} else if (choice > 0){
+					if (checkIfFriend(choice)){
+						System.out.println("Please only select choices from the menu");
+						continue;
+					}
+					query = "Insert into friends values (?, ?, ?, ?)";
+					prepStatement = connection.prepareStatement(query);
+					prepStatement.setInt(1, loggedInUserID);
+					prepStatement.setInt(2, choice);
+					java.util.Date date = new Date()
+					prepStatement.setDate(3, new java.sql.Date(date.getTime()));
+					prepStatement.setString(4, );
+
+					prepStatement.executeUpdate();
+					connection.commit();
+					System.out.println("Friend request successfully accepted");
+
+					//Write trigger to remove pendingFriends entry
+				} else if (choice < 0){
+					query = "Insert into groupMembership values (?, ?, ?)";
+					prepStatement = connection.prepareStatement(query);
+					prepStatement.setInt(1, (choice*-1));
+					prepStatement.setInt(2, loggedInUserID);
+					prepStatement.setString(3, "member");
+
+					prepStatement.executeUpdate();
+					connection.commit();
+					System.out.println("Group membership request successfully accepted");
+				}
+			}
+
+ */
