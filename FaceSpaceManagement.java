@@ -214,22 +214,191 @@ public class FaceSpaceManagement {
 	}
 
 	public synchronized void confirmFriendship(){
-		/*int counter = 1; int choice = 0;
-		boolean friendRequests = true;
-		boolean groupRequests = true;
+		int counter = 1; int choice = 0;
+		int friendRequests = 0;
+		int groupRequests = 0;
 
 		try{
 			connection.setAutoCommit(false);
 			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-
 			while(true) {
-				query = "Select fromID, message from pendingFriends where toID";
+				query = "Select count(*) from pendingFriends where toID = ?";
+				prepStatement = connection.prepareStatement(query);
+				prepStatement.setInt(1, loggedInUserID);
+				resultSet = prepStatement.executeQuery();
+				resultSet.next();
+				friendRequests = resultSet.getInt(1);
+
+				query = "Select count(*) from pendingGroupMembers where userID = ?";
+				prepStatement = connection.prepareStatement(query);
+				prepStatement.setInt(1, loggedInUserID);
+				resultSet = prepStatement.executeQuery();
+				resultSet.next();
+				groupRequests = resultSet.getInt(1);
+
+				if (groupRequests == 0 && friendRequests == 0) {
+					System.out.println("You have no outstanding group or friend invitations left.\n");
+					connection.commit();
+					return;
+				}
+
+				Listing[] listings = new Listing[groupRequests + friendRequests];
+
+				query = "Select fromID, message from pendingFriends where toID = ?";
+				prepStatement = connection.prepareStatement(query);
+				prepStatement.setInt(1, loggedInUserID);
+				resultSet = prepStatement.executeQuery();
+
+				int i = 0;
+
+				while (resultSet.next()) {
+					listings[i] = new Listing('f', resultSet.getInt(1), resultSet.getString(2));
+				}
+
+				query = "Select gid, message from pendingGroupMembers where userID = ?";
+				prepStatement = connection.prepareStatement(query);
+				prepStatement.setInt(1, loggedInUserID);
+				resultSet = prepStatement.executeQuery();
+
+				while (resultSet.next()) {
+					listings[i] = new Listing('g', resultSet.getInt(1), resultSet.getString(2));
+				}
+
+				/*
+				Takes the array of requests and prints them based on type.
+				 */
+				for (i = 0; i < listings.length; i++) {
+					System.out.print(i + 1 + "). ");
+					if (listings[i].getType() == 'f') { System.out.println("FRIEND REQUEST");
+						System.out.println("FROM " + getProfileName(listings[i].getId()) + "with user ID: " +
+						listings[i].getId());
+						System.out.println("MESSAGE: " + listings[i].getMessage());
+					} else {
+						System.out.println("GROUP MEMBERSHIP REQUEST");
+						System.out.println("FROM " + getGroupName(listings[i].getId()) + " with group ID: " +
+						listings[i].getId());
+						System.out.println("MESSAGE: " + listings[i].getMessage());
+					}
+				}
+
+				System.out.println("Please enter the listing you'd like to accept, or type -1 to accept them all.\n" +
+					                   "To reject an option, merely leave the menu and all remaining options will be rejected." +
+					                   "To leave the menu, type 0.");
+				choice = s.nextInt();
+				if (choice == 0){
+					rejectListings(listings);
+					connection.commit();
+					return;
+				} else if (choice == -1){
+					acceptListings(listings);
+					connection.commit();
+					return;
+				} else if (choice < listings.length+1 && choice > 0){
+					acceptSingleListing(listings[i-1]);
+					continue;
+				} else {
+					System.out.println("Please choose one of the options from the list.");
+				}
+
+
+			}
+
+		} catch (Exception e){
+			e.printStackTrace();
+		}
+	}
+		/*
+		Accepts a single one of the menu listings when confirming requests and processes it.
+		 */
+	public void acceptSingleListing(Listing listing){
+		try{
+			connection.setAutoCommit(false);
+			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+
+			if (listing.getType() == 'f'){
+				query = "INSERT INTO FRIENDS VALUES (?, ?, LOCALTIMESTAMP(6), ?)";
+				prepStatement = connection.prepareStatement(query);
+				prepStatement.setInt(1, loggedInUserID);
+				prepStatement.setInt(2, listing.getId());
+				prepStatement.setString(3, listing.getMessage());
+				prepStatement.executeQuery();
+				connection.commit();
+				System.out.println("Friend request successfully accepted");
 			}
 		} catch (Exception e){
 			e.printStackTrace();
-		}*/
+		}
 	}
+	/*
+	Accepts all listings in the array of listings.
+	 */
 
+	public void acceptListings(Listing[] listings){
+		int i = 0;
+		try {
+			connection.setAutoCommit(false);
+			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+
+			for (i = 0; i < listings.length; i++){
+				if (listings[i].getType() == 'f'){
+					query = "INSERT INTO FRIENDS VALUES (?, ?, LOCALTIMESTAMP(6), ?)";
+					prepStatement = connection.prepareStatement(query);
+					prepStatement.setInt(1, loggedInUserID);
+					prepStatement.setInt(2, listings[i].getId());
+					prepStatement.setString(3, listings[i].getMessage());
+					prepStatement.executeQuery();
+ 				} else {
+					query = "INSERT INTO GROUPMEMBERSHIP VALUES(?, ?, ?)";
+					prepStatement = connection.prepareStatement(query);
+					prepStatement.setInt(1, listings[i].getId());
+					prepStatement.setInt(2, loggedInUserID);
+					prepStatement.setString(3, "Member");
+					prepStatement.executeQuery();
+				}
+			}
+			connection.commit();
+			System.out.println("All requests successfully accepted");
+			return;
+		} catch (Exception e){
+			e.printStackTrace();
+		}
+	}
+	/*
+	Rejects all the listings in the array
+	 */
+	public void rejectListings(Listing[] listings){
+		int i = 0;
+		try {
+			connection.setAutoCommit(false);
+			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+
+			for (i = 0; i < listings.length; i++){
+				if (listings[i].getType() == 'f'){
+					query = "DELETE FROM PENDINGFRIENDS WHERE TOID = ? AND FROMID = ?";
+					prepStatement = connection.prepareStatement(query);
+					prepStatement.setInt(1, loggedInUserID);
+					prepStatement.setInt(2, listings[i].getId());
+					prepStatement.executeQuery();
+				} else {
+					query = "DELETE FROM PENDINGGROUPMEMBERS WHERE TOID = ? AND GID = ?";
+					prepStatement = connection.prepareStatement(query);
+					prepStatement.setInt(1, loggedInUserID);
+					prepStatement.setInt(2, listings[i].getId());
+					prepStatement.executeQuery();
+				}
+			}
+			connection.commit();
+			System.out.println("All requests successfully rejected.");
+			return;
+		} catch (Exception e){
+			e.printStackTrace();
+		}
+	}
+	/*
+	Prints out a list of the user's friends. Upon selecting one of the friends, the user can then
+	view THEIR friends or view this person's profile. This does not support the friends of the friends
+	of a friend however.
+	 */
 	public synchronized void displayFriends(){
 		int counter = 1;
 		boolean loop = true;
@@ -512,6 +681,43 @@ public class FaceSpaceManagement {
 			e.printStackTrace();
 		}
 	}
+	public String getGroupName(int ID){
+		try {
+			connection.setAutoCommit(false);
+			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+			query = "Select name from groups where gID = ?";
+			prepStatement = connection.prepareStatement(query);
+			prepStatement.setInt(1,ID);
+			resultSet = prepStatement.executeQuery();
+
+			if (!resultSet.next()){
+				return "GROUP NOT FOUND HELP!";
+			}
+			return resultSet.getString(1);
+		} catch (Exception e){
+			e.printStackTrace();
+		}
+		return "Something goofed";
+	}
+
+	public String getProfileName(int ID){
+		try {
+			connection.setAutoCommit(false);
+			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+			query = "Select name from profile where userID = ?";
+			prepStatement = connection.prepareStatement(query);
+			prepStatement.setInt(1,ID);
+			resultSet = prepStatement.executeQuery();
+
+			if (!resultSet.next()){
+				return "PROFILE NOT FOUND HELP!";
+			}
+			return resultSet.getString(1);
+		} catch (Exception e){
+			e.printStackTrace();
+		}
+		return "Something goofed";
+	}
 
 	public void printProfile(int ID){
 
@@ -537,12 +743,36 @@ public class FaceSpaceManagement {
 	}
 
 	public void disconnect() {
-			try {
-				connection.close();
-			} catch (Exception E){
-				System.out.println("Connection couldn't close: " + E.toString());
-			}
+		try {
+			connection.close();
+		} catch (Exception E){
+			System.out.println("Connection couldn't close: " + E.toString());
 		}
+	}
+
+	private class Listing{
+		char type;
+		int id;
+		String message;
+
+		Listing(char type, int id, String message){
+			this.type = type;
+			this.id = id;
+			this.message = message;
+		}
+
+		char getType(){
+			return type;
+		}
+
+		int getId(){
+			return id;
+		}
+
+		String getMessage(){
+			return message;
+		}
+	}
 }
 
 /*
