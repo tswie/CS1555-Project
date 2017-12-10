@@ -43,63 +43,51 @@ public class SocialPanther {
         switch(choice) {
 
           case 1:
-            //done
             fsm.initiateFriendship();
             break;
           case 2:
-            //done
             fsm.confirmFriendship();
             break;
           case 3:
-            //done
             fsm.displayFriends();
             break;
           case 4:
-            //done
             fsm.createGroup();
             break;
           case 5:
-            //done
             fsm.initiateAddingGroup();
             break;
-          case 6:
+          case 7:
             fsm.sendMessageToUser();
             break;
-          case 7:
+          case 8:
             fsm.sendMessageToGroup();
             break;
-          case 8:
-            //done
+          case 9:
             fsm.displayMessages();
             break;
-          case 9:
+          case 10:
             fsm.displayNewMessages();
             break;
-          case 10:
+          case 11:
             fsm.searchForUser();
             break;
-          case 11:
+          case 12:
             fsm.threeDegrees();
             break;
-          case 12:
+          case 13:
             fsm.topMessages();
             break;
-          case 13:
-            //done
-            if (fsm.dropUser() == -1){
-              choice = 13;
-            } else {
-              choice = 0;
-            }
-            break;
           case 14:
-            //done
+            fsm.dropUser();
+            break;
+          case 15:
             fsm.logOut();
             break;
           default:
             System.out.println("Pick one of the options!\n");
         }
-      }while(choice != 14 && choice!=13);
+      }while(choice != 15);
     }
   }
 
@@ -127,18 +115,19 @@ public class SocialPanther {
   public static void mainMenu() {
 
     System.out.println("\n1. Start New Friendship");
-    System.out.println("2. Confirm Friendship and Group Members");
+    System.out.println("2. Confirm Friendship");
     System.out.println("3. Display Friends");
     System.out.println("4. Create a Group");
     System.out.println("5. Request to be Added to a Group");
-    System.out.println("6. Send Message to User");
-    System.out.println("7. Send Message to Group");
-    System.out.println("8. Display Messages");
-    System.out.println("9. Display New Messages");
-    System.out.println("10. Search for User");
-    System.out.println("11. Check for a Path");
-    System.out.println("12. Print Top Messages");
-    System.out.println("13. Drop User");
-    System.out.println("14. Log Out\n");
+    System.out.println("6. Add Users to Group");
+    System.out.println("7. Send Message to User");
+    System.out.println("8. Send Message to Group");
+    System.out.println("9. Display Messages");
+    System.out.println("10. Display New Messages");
+    System.out.println("11. Search for User");
+    System.out.println("12. Check for a Path");
+    System.out.println("13. Print Top Messages");
+    System.out.println("14. Drop User");
+    System.out.println("15. Log Out\n");
   }
 }
