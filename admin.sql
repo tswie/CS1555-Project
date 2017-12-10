@@ -1,0 +1,11 @@
+insert into profile values (-3, 'admin', 'admin', 'admin', TO_DATE('1954-08-04', 'YYYY-MM-DD'), localtimestamp(6));
+insert into friends values (-3, 8, localtimestamp(6), 'heyo');
+insert into friends values (-3, 10, localtimestamp(6),'Hi');
+insert into friends values (-3, 30, localtimestamp(6), 'Bonjour');
+insert into pendingFriends values (90, -3, 'hi');
+insert into pendingFriends values (80, -3, 'please let me have a friend');
+insert into messages values (-4, 30, 'hi', -3, null, TO_DATE('1954-08-04', 'YYYY-MM-DD'));
+insert into messages values (-3, 10, 'hello', -3, null, TO_DATE('1954-08-04', 'YYYY-MM-DD'));
+insert into groups values (-2, 'admin', 'hi', 5);
+insert into groupmembership values (-2, -3, 'manager');
+insert into pendingGroupmembers values (-2, 80, 'please let me in');
