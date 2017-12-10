@@ -43,18 +43,23 @@ public class SocialPanther {
         switch(choice) {
 
           case 1:
+            //done
             fsm.initiateFriendship();
             break;
           case 2:
+            //done
             fsm.confirmFriendship();
             break;
           case 3:
+            //done
             fsm.displayFriends();
             break;
           case 4:
+            //done
             fsm.createGroup();
             break;
           case 5:
+            //done
             fsm.initiateAddingGroup();
             break;
           case 6:
@@ -64,6 +69,7 @@ public class SocialPanther {
             fsm.sendMessageToGroup();
             break;
           case 8:
+            //done
             fsm.displayMessages();
             break;
           case 9:
@@ -79,11 +85,15 @@ public class SocialPanther {
             fsm.topMessages();
             break;
           case 13:
+            //done
             if (fsm.dropUser() == -1){
               choice = 13;
+            } else {
+              choice = 0;
             }
             break;
           case 14:
+            //done
             fsm.logOut();
             break;
           default:

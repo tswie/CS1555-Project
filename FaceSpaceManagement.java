@@ -653,7 +653,7 @@ public class FaceSpaceManagement {
 	}
 
 	public void topMessages(){
-
+		query =
 	}
 
 	/*
