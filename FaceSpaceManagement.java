@@ -75,7 +75,7 @@ public class FaceSpaceManagement {
 			prepStatement = connection.prepareStatement(query);
 
 			//Now replace the question marks with the appropriate user values
-			prepStatement.setInt(1, newUserID);
+			prepStatement.setInt(1, newUserID+1);
 			prepStatement.setString(2, name);
 			prepStatement.setString(3, email);
 			prepStatement.setString(4, password);
@@ -92,6 +92,7 @@ public class FaceSpaceManagement {
 		}
 		catch(SQLIntegrityConstraintViolationException ve) {
 			System.out.println("That email is already registered to a user");
+			ve.printStackTrace();
 		}
 		catch(Exception e) {
 			System.out.println("Failed to create user");
@@ -222,14 +223,15 @@ public class FaceSpaceManagement {
 			connection.setAutoCommit(false);
 			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 			while(true) {
-				query = "Select count(*) from pendingFriends where toID = ?";
+				query = "Select count(*) from pendingFriends where toID = ? ";
 				prepStatement = connection.prepareStatement(query);
 				prepStatement.setInt(1, loggedInUserID);
 				resultSet = prepStatement.executeQuery();
 				resultSet.next();
 				friendRequests = resultSet.getInt(1);
 
-				query = "Select count(*) from pendingGroupMembers where userID = ?";
+				query = "Select count(*) from pendingGroupMembers where gID = (Select unique gID from groupMembership where userID = ? and role" +
+					        "= 'manager')";
 				prepStatement = connection.prepareStatement(query);
 				prepStatement.setInt(1, loggedInUserID);
 				resultSet = prepStatement.executeQuery();
@@ -242,9 +244,11 @@ public class FaceSpaceManagement {
 					return;
 				}
 
+				System.out.println("You have " + friendRequests + " friend requests and " + groupRequests + " group requests");
+
 				Listing[] listings = new Listing[groupRequests + friendRequests];
 
-				query = "Select fromID, message from pendingFriends where toID = ?";
+				query = "Select fromID, message from pendingFriends where toID = ? for update";
 				prepStatement = connection.prepareStatement(query);
 				prepStatement.setInt(1, loggedInUserID);
 				resultSet = prepStatement.executeQuery();
@@ -253,35 +257,38 @@ public class FaceSpaceManagement {
 
 				while (resultSet.next()) {
 					listings[i] = new Listing('f', resultSet.getInt(1), resultSet.getString(2));
+					i++;
 				}
 
-				query = "Select gid, message from pendingGroupMembers where userID = ?";
+				query = "Select userID, message, gID from pendingGroupMembers where gID = ANY(Select unique gID from groupMembership" +
+					       " where userID = ? and role = 'manager')";
 				prepStatement = connection.prepareStatement(query);
 				prepStatement.setInt(1, loggedInUserID);
 				resultSet = prepStatement.executeQuery();
 
 				while (resultSet.next()) {
-					listings[i] = new Listing('g', resultSet.getInt(1), resultSet.getString(2));
+					listings[i] = new Listing('g', resultSet.getInt(1), resultSet.getString(2), resultSet.getInt(3));
+					i++;
 				}
 
 				/*
 				Takes the array of requests and prints them based on type.
 				 */
 				for (i = 0; i < listings.length; i++) {
-					System.out.print(i + 1 + "). ");
+					System.out.print("\n" + (i +1) + "). ");
 					if (listings[i].getType() == 'f') { System.out.println("FRIEND REQUEST");
 						System.out.println("FROM " + getProfileName(listings[i].getId()) + "with user ID: " +
 						listings[i].getId());
 						System.out.println("MESSAGE: " + listings[i].getMessage());
 					} else {
 						System.out.println("GROUP MEMBERSHIP REQUEST");
-						System.out.println("FROM " + getGroupName(listings[i].getId()) + " with group ID: " +
+						System.out.println("FROM " + getGroupName(listings[i].getGroupId()) + " with userID ID: " +
 						listings[i].getId());
 						System.out.println("MESSAGE: " + listings[i].getMessage());
 					}
 				}
 
-				System.out.println("Please enter the listing you'd like to accept, or type -1 to accept them all.\n" +
+				System.out.println("\nPlease enter the listing you'd like to accept, or type -1 to accept them all.\n" +
 					                   "To reject an option, merely leave the menu and all remaining options will be rejected." +
 					                   "To leave the menu, type 0.");
 				choice = s.nextInt();
@@ -312,8 +319,6 @@ public class FaceSpaceManagement {
 		 */
 	public void acceptSingleListing(Listing listing){
 		try{
-			connection.setAutoCommit(false);
-			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 
 			if (listing.getType() == 'f'){
 				query = "INSERT INTO FRIENDS VALUES (?, ?, LOCALTIMESTAMP(6), ?)";
@@ -323,7 +328,15 @@ public class FaceSpaceManagement {
 				prepStatement.setString(3, listing.getMessage());
 				prepStatement.executeQuery();
 				connection.commit();
-				System.out.println("Friend request successfully accepted");
+				System.out.println("\nFriend request successfully accepted");
+			} else {
+				query = "insert into groupMembership values (?, ?, 'member')";
+				prepStatement = connection.prepareStatement(query);
+				prepStatement.setInt(1, listing.getGroupId());
+				prepStatement.setInt(2, listing.getId());
+				prepStatement.executeQuery();
+				connection.commit();
+				System.out.println("\nGroup request successfully accepted");
 			}
 		} catch (Exception e){
 			e.printStackTrace();
@@ -336,9 +349,6 @@ public class FaceSpaceManagement {
 	public void acceptListings(Listing[] listings){
 		int i = 0;
 		try {
-			connection.setAutoCommit(false);
-			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-
 			for (i = 0; i < listings.length; i++){
 				if (listings[i].getType() == 'f'){
 					query = "INSERT INTO FRIENDS VALUES (?, ?, LOCALTIMESTAMP(6), ?)";
@@ -350,9 +360,9 @@ public class FaceSpaceManagement {
  				} else {
 					query = "INSERT INTO GROUPMEMBERSHIP VALUES(?, ?, ?)";
 					prepStatement = connection.prepareStatement(query);
-					prepStatement.setInt(1, listings[i].getId());
-					prepStatement.setInt(2, loggedInUserID);
-					prepStatement.setString(3, "Member");
+					prepStatement.setInt(1, listings[i].getGroupId());
+					prepStatement.setInt(2, listings[i].getId());
+					prepStatement.setString(3, "member");
 					prepStatement.executeQuery();
 				}
 			}
@@ -369,8 +379,6 @@ public class FaceSpaceManagement {
 	public void rejectListings(Listing[] listings){
 		int i = 0;
 		try {
-			connection.setAutoCommit(false);
-			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 
 			for (i = 0; i < listings.length; i++){
 				if (listings[i].getType() == 'f'){
@@ -379,12 +387,14 @@ public class FaceSpaceManagement {
 					prepStatement.setInt(1, loggedInUserID);
 					prepStatement.setInt(2, listings[i].getId());
 					prepStatement.executeQuery();
+					connection.commit();
 				} else {
 					query = "DELETE FROM PENDINGGROUPMEMBERS WHERE TOID = ? AND GID = ?";
 					prepStatement = connection.prepareStatement(query);
 					prepStatement.setInt(1, loggedInUserID);
 					prepStatement.setInt(2, listings[i].getId());
 					prepStatement.executeQuery();
+					connection.commit();
 				}
 			}
 			connection.commit();
@@ -425,9 +435,9 @@ public class FaceSpaceManagement {
 					System.out.println("No friends found");
 					return;
 				}
-				System.out.println("Here are your friends: \n");
+				System.out.println("--------------\nHere are your friends: \n");
 				while (resultSet.next()) {
-					System.out.println(counter++ + ")");
+					//System.out.println(counter++ + ")");
 					System.out.println("UserID: " +
 						resultSet.getInt(1));
 					System.out.println("Name: " +
@@ -444,7 +454,7 @@ public class FaceSpaceManagement {
 					System.out.println("Would you like to\n" +
 						"1.)Browse this user's friends\n" +
 						"2.)See this user's profile\n" +
-						"3.)Go back to browsing your friends");
+						"3.)Go back to browsing your friends\n");
 					input = s.nextInt();
 					switch (input){
 						case 1:
@@ -513,53 +523,53 @@ public class FaceSpaceManagement {
 		}
 	}
 
+	/*
+	This is handled in confirm users
+
+	public void confirmGroupMembers() {
+
+	}
+	*/
+
 	public synchronized void initiateAddingGroup(){
-		String gName, message;
-
-		try {
-			connection.setAutoCommit(false); //We want every createUser call to be its own transaction
+		try{
+			connection.setAutoCommit(false);
 			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-
-			System.out.print("Which group do you want to join? : ");
-			gName = s.nextLine();
-			System.out.print("Send a message to the group : ");
-			message = s.nextLine();
-
-			query = "select gID, gLimit from groups where name = ?";
-			prepStatement = connection.prepareStatement(query);
-			prepStatement.setString(1, gName);
-			resultSet = prepStatement.executeQuery();
-			resultSet.next();
-			int gID = resultSet.getInt(1);
-			int gLimit = resultSet.getInt(2);
-
-			query = "select count(userID) from groupmembership where gID = ?";
-			prepStatement = connection.prepareStatement(query);
-			prepStatement.setInt(1, gID);
-			resultSet = prepStatement.executeQuery();
-			resultSet.next();
-			int currentGSize = resultSet.getInt(1);
-
-			if(gLimit == currentGSize)
-				System.out.println("This group is full");
-			else {
-
-				query = "insert into pendinggroupmemebers values (?, ?, ?)";
+			int id;
+			String message;
+			while (true){
+				System.out.println("Please enter the ID of the group you would like to join, or 0 to exit.");
+				id = s.nextInt();
+				if (id == 0){
+					return;
+				}
+				query = "select * from groups where gID = ? for update of pendingGroupMembers";
 				prepStatement = connection.prepareStatement(query);
-				prepStatement.setInt(1, gID);
+				prepStatement.setInt(1, id);
+				resultSet = prepStatement.executeQuery();
+
+				if (!resultSet.isBeforeFirst()){
+					continue;
+				}
+
+				System.out.println("Please enter the message you'd like to accompany the request.");
+				message = s.nextLine();
+				query = "insert into pendingGroupMembers values (?,?,?)";
+				prepStatement = connection.prepareStatement(query);
+				prepStatement.setInt(1, id);
 				prepStatement.setInt(2, loggedInUserID);
 				prepStatement.setString(3, message);
+
 				prepStatement.executeUpdate();
 				connection.commit();
+				return;
 
-				System.out.printf("Sent request to group %s", gName);
+
 			}
-		}
-		catch(Exception e) {
-			System.out.println("Failed to send request to joing group.");
+		} catch (Exception e){
 			e.printStackTrace();
-			s.nextLine();
 		}
+
 	}
 
 	public synchronized void sendMessageToUser(){
@@ -625,7 +635,6 @@ public class FaceSpaceManagement {
 	}
 
 	public synchronized void sendMessageToGroup(){
-
 		try {
 			connection.setAutoCommit(false); //We want every createUser call to be its own transaction
 			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
@@ -697,35 +706,19 @@ public class FaceSpaceManagement {
 			connection.setAutoCommit(false);
 			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 
-			query = "select fromID, message, toGroupID from messages where toUserID = ?";
+			query = "Select fromID, message from messages where toUserID = ?";
 			prepStatement = connection.prepareStatement(query);
 			prepStatement.setInt(1, loggedInUserID);
-			ResultSet resultSet = prepStatement.executeQuery();
+			resultSet = prepStatement.executeQuery();
 
 			if (!resultSet.isBeforeFirst()){
 				System.out.println("No messages found");
 				return;
 			}
-			else {
 
-				ResultSet fromResultSet = null;
-				while (resultSet.next()){
-					int fromID = resultSet.getInt(1);
-
-					System.out.println("\nFrom User: " + getProfileName(fromID));
-					System.out.println("UserID: " + fromID);
-
-						String groupID = resultSet.getString(3);
-						//System.out.println(groupID);
-
-						if(groupID != null) {
-							System.out.println("For Group: " + getGroupName(Integer.parseInt(groupID)));
-							System.out.println("Group ID: " + groupID);
-						}
-
-
-					System.out.println("Message contents: " + resultSet.getString(2));
-				}
+			while (resultSet.next()){
+				System.out.println("\nFrom userID: " + resultSet.getInt(1));
+				System.out.println("Message contents: " + resultSet.getString(2));
 			}
 			return;
 		} catch (Exception e){
@@ -735,52 +728,38 @@ public class FaceSpaceManagement {
 
 	public synchronized void displayNewMessages(){
 		try {
-
 			connection.setAutoCommit(false);
 			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 
-			query = "select lastlogin from profile where userID = ?";
+			query = "Select lastlogin from profile where userID = ?";
 			prepStatement = connection.prepareStatement(query);
 			prepStatement.setInt(1, loggedInUserID);
 			resultSet = prepStatement.executeQuery();
-			resultSet.next();
-			String lastlogin = resultSet.getString(1);
-			System.out.println("LastLogin : " + lastlogin);
-			//String[] lastloginSplit = resultSet.getString(1).split(" ");
-			//String lastlogin = lastloginSplit[0] + " " + lastloginSplit[1];
-			//lastlogin = lastlogin.substring(0, lastlogin.length()-1);
+			java.sql.Timestamp login;
 
-			query = "select fromID, message, toGroupID, dateSent from messages where toUserID = ?";
-			prepStatement = connection.prepareStatement(query);
-			prepStatement.setInt(1, loggedInUserID);
-			ResultSet resultSet = prepStatement.executeQuery();
+			if (!resultSet.next()){
+				displayMessages();
+			} else {
+				login = resultSet.getTimestamp(1);
+				query = "Select fromID, message from messages where toUserID = ? and dateSent > ?";
+				prepStatement = connection.prepareStatement(query);
+				prepStatement.setInt(1, loggedInUserID);
+				prepStatement.setTimestamp(2, login);
+				resultSet = prepStatement.executeQuery();
 
-			if (!resultSet.isBeforeFirst()){
-				System.out.println("No messages found");
-				return;
-			}
-			else {
-				//System.out.println(lastlogin.compareTo(resultSet.getString(4)));
-				ResultSet fromResultSet = null;
-				while (resultSet.next()){
-					if(lastlogin.compareTo(resultSet.getString(4)) < 0) {
-						int fromID = resultSet.getInt(1);
-						System.out.println("\nFrom User: " + getProfileName(fromID));
-						System.out.println("UserID: " + fromID);
-
-						String groupID = resultSet.getString(3);
-						if(groupID != null) {
-							System.out.println("For Group: " + getGroupName(Integer.parseInt(groupID)));
-							System.out.println("Group ID: " + groupID);
-						}
-
+				if (!resultSet.isBeforeFirst()){
+					System.out.println("\nNo new messages. \n");
+					return;
+				} else {
+					while (resultSet.next()){
+						System.out.println("\nFrom userID: " + resultSet.getInt(1));
 						System.out.println("Message contents: " + resultSet.getString(2));
 					}
+					return;
 				}
 			}
-			return;
-		}
-		catch(Exception e) {
+
+		} catch (Exception e){
 			e.printStackTrace();
 		}
 	}
@@ -823,11 +802,34 @@ public class FaceSpaceManagement {
 	}
 
 	public void topMessages(){
-
+		query =
 	}
 
-	public void dropUser(){
+	/*
+	Most of the work is done using the dropuser trigger in spdb.sql
+	 */
+	public int dropUser(){
+		int choice;
+		try{
+			connection.setAutoCommit(false);
+			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 
+			query = "Delete from profile where userID = ?";
+			System.out.println("Enter the ID of the user you'd like to delete?");
+			choice = s.nextInt();
+			if (choice == loggedInUserID){
+				return -1;
+			}
+
+			prepStatement = connection.prepareStatement(query);
+			prepStatement.setInt(1, choice);
+			prepStatement.executeUpdate();
+			connection.commit();
+			return 0;
+		} catch (Exception e){
+			e.printStackTrace();
+		}
+		return 0;
 	}
 
 	public void logOut() {
@@ -840,6 +842,8 @@ public class FaceSpaceManagement {
 			prepStatement.setInt(1, loggedInUserID);
 			prepStatement.executeUpdate();
 			connection.commit();
+			loggedInUserID = 0;
+			System.out.println("Log-out successful.");
 		} catch (Exception e){
 			e.printStackTrace();
 		}
@@ -883,12 +887,12 @@ public class FaceSpaceManagement {
 		try {
 			connection.setAutoCommit(false);
 			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-			query = "Select unique userID, name from profile where userID = " +
+			query = "Select unique userID, name from profile where userID = ANY " +
 					        "(select userID1 from friends where userID2 = ?) or " +
-					        "userID = (select userID2 from friends where userID1 = ?)";
+					        "userID = ANY(select userID2 from friends where userID1 = ?)";
 			prepStatement = connection.prepareStatement(query);
-			prepStatement.setInt(1, loggedInUserID);
-			prepStatement.setInt(2, loggedInUserID);
+			prepStatement.setInt(1, ID);
+			prepStatement.setInt(2, ID);
 			resultSet = prepStatement.executeQuery();
 
 			if (!resultSet.isBeforeFirst()) {
@@ -926,7 +930,7 @@ public class FaceSpaceManagement {
 					System.out.println("User Name: " + resultSet.getString(2));
 				}
 
-				System.out.println("Select the userID whose profile you'd like to see, or 0 to return your friends");
+				System.out.println("\nSelect the userID whose profile you'd like to see, or 0 to return your friends");
 				input = s.nextInt();
 				if (input == 0) { return;
 				} else { printProfile(input);
@@ -938,8 +942,6 @@ public class FaceSpaceManagement {
 	}
 	public String getGroupName(int ID){
 		try {
-			connection.setAutoCommit(false);
-			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 			query = "Select name from groups where gID = ?";
 			prepStatement = connection.prepareStatement(query);
 			prepStatement.setInt(1,ID);
@@ -957,8 +959,6 @@ public class FaceSpaceManagement {
 
 	public String getProfileName(int ID){
 		try {
-			connection.setAutoCommit(false);
-			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 			query = "Select name from profile where userID = ?";
 			prepStatement = connection.prepareStatement(query);
 			prepStatement.setInt(1,ID);
@@ -1008,6 +1008,7 @@ public class FaceSpaceManagement {
 	private class Listing{
 		char type;
 		int id;
+		int gid;
 		String message;
 
 		Listing(char type, int id, String message){
@@ -1016,12 +1017,23 @@ public class FaceSpaceManagement {
 			this.message = message;
 		}
 
+		Listing (char type, int id, String message, int gid){
+			this.type = type;
+			this.id = id;
+			this.message = message;
+			this.gid = gid;
+		}
+
 		char getType(){
 			return type;
 		}
 
 		int getId(){
 			return id;
+		}
+
+		int getGroupId(){
+			return gid;
 		}
 
 		String getMessage(){
