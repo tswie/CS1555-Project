@@ -607,7 +607,41 @@ public class FaceSpaceManagement {
 	}
 
 	public synchronized void displayNewMessages(){
+		try {
+			connection.setAutoCommit(false);
+			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 
+			query = "Select lastlogin from profile where userID = ?";
+			prepStatement = connection.prepareStatement(query);
+			prepStatement.setInt(1, loggedInUserID);
+			resultSet = prepStatement.executeQuery();
+			java.sql.Timestamp login;
+
+			if (!resultSet.next()){
+				displayMessages();
+			} else {
+				login = resultSet.getTimestamp(1);
+				query = "Select fromID, message from messages where toUserID = ? and dateSent > ?";
+				prepStatement = connection.prepareStatement(query);
+				prepStatement.setInt(1, loggedInUserID);
+				prepStatement.setTimestamp(2, login);
+				resultSet = prepStatement.executeQuery();
+
+				if (!resultSet.isBeforeFirst()){
+					System.out.println("\nNo new messages. \n");
+					return;
+				} else {
+					while (resultSet.next()){
+						System.out.println("\nFrom userID: " + resultSet.getInt(1));
+						System.out.println("Message contents: " + resultSet.getString(2));
+					}
+					return;
+				}
+			}
+
+		} catch (Exception e){
+			e.printStackTrace();
+		}
 	}
 
 	public void searchForUser(){
