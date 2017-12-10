@@ -79,8 +79,9 @@ public class SocialPanther {
             fsm.topMessages();
             break;
           case 13:
-            fsm.dropUser();
-            fsm.logOut();
+            if (fsm.dropUser() == -1){
+              choice = 13;
+            }
             break;
           case 14:
             fsm.logOut();

@@ -625,7 +625,7 @@ public class FaceSpaceManagement {
 	/*
 	Most of the work is done using the dropuser trigger in spdb.sql
 	 */
-	public void dropUser(){
+	public int dropUser(){
 		int choice;
 		try{
 			connection.setAutoCommit(false);
@@ -635,18 +635,18 @@ public class FaceSpaceManagement {
 			System.out.println("Enter the ID of the user you'd like to delete?");
 			choice = s.nextInt();
 			if (choice == loggedInUserID){
-				logOut();
-				loggedInUserID = 0;
+				return -1;
 			}
 
 			prepStatement = connection.prepareStatement(query);
 			prepStatement.setInt(1, choice);
 			prepStatement.executeUpdate();
 			connection.commit();
-			return;
+			return 0;
 		} catch (Exception e){
 			e.printStackTrace();
 		}
+		return 0;
 	}
 
 	public void logOut() {
