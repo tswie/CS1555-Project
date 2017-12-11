@@ -1,6 +1,12 @@
 Hello,
 
 
+IMPORTANT: We had some REALLY weird last minute github issues merging versions together. The version I have as of now
+(11:58 PM) compiles and runs the transactions without issue, however Im not sure if my fixes merged properly as I
+forced the push with "git push origin +remote". I'm hoping that this meant that ALL of my files completely overwrote
+what's on the repo. If this isn't the case, please give us a chance to try to fix it, I will keep my last changed dates
+to right now in order to ensure that I can prove this is the case for me. 
+
 First, go into your sqlplus database and initiate the database using the following commands(you can use your own db for this):
 @spdb.sql
 @insert.sql
