@@ -608,6 +608,7 @@ public class FaceSpaceManagement {
 			resultSet.next();
 			int newMsgID = resultSet.getInt(1);
 			newMsgID++;
+			System.out.println(newMsgID);
 
 			SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
 			//Calendar c = Calendar.getInstance();
@@ -671,6 +672,7 @@ public class FaceSpaceManagement {
 				resultSet.next();
 				int newMsgID = resultSet.getInt(1);
 				newMsgID++;
+				System.out.println(newMsgID);
 
 				query = "select userID from groupmembership where gID = ?";
 				prepStatement = connection.prepareStatement(query);
@@ -680,22 +682,23 @@ public class FaceSpaceManagement {
 
 				while(resultSet.next()) {
 
-					if(resultSet.getInt(1) != loggedInUserID) {
 						query = "insert into messages values (?, ?, ?, ?, ?, LOCALTIMESTAMP(6))";
 						prepStatement = connection.prepareStatement(query);
 						prepStatement.setInt(1, newMsgID);
+						System.out.println("Creating a new message with msgID: " + newMsgID);
 						prepStatement.setInt(2, loggedInUserID);
 						prepStatement.setString(3, message.toString());
 						prepStatement.setInt(4, resultSet.getInt(1));
 						prepStatement.setInt(5, groupID);
 						prepStatement.executeUpdate();
-					}
+						newMsgID++;
 				}
 
 				connection.commit();
 			}
 		}
 		catch(Exception e) {
+			e.printStackTrace();
 			System.out.println("Failed to send message to group");
 		}
 	}
@@ -802,7 +805,20 @@ public class FaceSpaceManagement {
 	}
 
 	public void topMessages(){
-		query =
+		try{
+			connection.setAutoCommit(false);
+			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+
+			query = "select fromID, count(fromID) as most_common from messages group by fromID order by count(*) desc";
+			prepStatement = connection.prepareStatement(query);
+			resultSet = prepStatement.executeQuery();
+
+			resultSet.next();
+			System.out.println("The user with the most messages sent is " + getProfileName(resultSet.getInt(1)));
+			return;
+		} catch (Exception e){
+			e.printStackTrace();
+		}
 	}
 
 	/*
