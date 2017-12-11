@@ -75,7 +75,7 @@ public class FaceSpaceManagement {
 			prepStatement = connection.prepareStatement(query);
 
 			//Now replace the question marks with the appropriate user values
-			prepStatement.setInt(1, newUserID+1);
+			prepStatement.setInt(1, newUserID);
 			prepStatement.setString(2, name);
 			prepStatement.setString(3, email);
 			prepStatement.setString(4, password);
@@ -127,7 +127,7 @@ public class FaceSpaceManagement {
 				counter++;
 				currentID = resultSet.getInt(1);
 			}
-
+			System.out.println("Logging in");
 			if(counter == 1) {
 				loggedInUserID = currentID;
 				System.out.println("Log In Successful");
@@ -543,7 +543,7 @@ public class FaceSpaceManagement {
 				if (id == 0){
 					return;
 				}
-				query = "select * from groups where gID = ? for update of pendingGroupMembers";
+				query = "select * from groups where gID = ?";
 				prepStatement = connection.prepareStatement(query);
 				prepStatement.setInt(1, id);
 				resultSet = prepStatement.executeQuery();
@@ -553,6 +553,7 @@ public class FaceSpaceManagement {
 				}
 
 				System.out.println("Please enter the message you'd like to accompany the request.");
+				message = s.nextLine();
 				message = s.nextLine();
 				query = "insert into pendingGroupMembers values (?,?,?)";
 				prepStatement = connection.prepareStatement(query);
