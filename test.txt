@@ -1,0 +1,105 @@
+jak244
+3860740
+2
+Selene Jones
+ubc23@pitt.edu
+lbgkdsstbt
+1958-07-15
+14
+2
+Mark Moore
+qcc64@pitt.edu
+vbsgyfyxpq
+1914-04-15
+14
+2
+Mark Suh
+uiv04@pitt.edu
+luregaodsc
+1954-08-04
+14
+2
+Eileen Brown
+gfz57@pitt.edu
+dsydftkpvt
+1971-06-14
+14
+2
+Leeroy Davis
+oxf77@pitt.edu
+tujnobvsha
+1913-03-17
+14
+2
+Brittany Suh
+kua96@pitt.edu
+jnbozczaxb
+1968-07-18
+1
+3
+yes
+Lets Be Friends 1
+1
+5
+yes
+Lets Be Friends 2
+14
+1
+ubc23@pitt.edu
+lbgkdsstbt
+1
+2
+yes
+Lets Be Friends 3
+1
+3
+yes
+Lets Be Friends 4
+1
+4
+yes
+Lets Be Friends 5
+14
+1
+qcc64@pitt.edu
+vbsgyfyxpq
+1
+4
+yes
+Lets Be Friends 6
+1
+5
+yes
+Lets Be Friends 7
+2
+-1
+14
+1
+uiv04@pitt.edu
+luregaodsc
+2
+-1
+14
+1
+gfz57@pitt.edu
+dsydftkpvt
+1
+5
+yes
+Lets Be Friends 8
+2
+-1
+14
+1
+oxf77@pitt.edu
+tujnobvsha
+2
+-1
+14
+1
+kua96@pitt.edu
+jnbozczaxb
+2
+-1
+14
+3

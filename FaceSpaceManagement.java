@@ -13,16 +13,17 @@ public class FaceSpaceManagement {
 	private PreparedStatement prepStatement; //used to create a prepared statement, that will be later reused
 	private ResultSet resultSet; //used to hold the result of your query (if one exists)
 	private String query;  //this will hold the query we are using
-	private Scanner s = new Scanner(System.in);
+	private Scanner s;// = new Scanner(System.in);
 	private int loggedInUserID;
 
 	/*
 		Initiates DB Connection
 	 */
-	public FaceSpaceManagement(String username, String password) {
+	public FaceSpaceManagement(String username, String password, Scanner s) {
 
 		try{
 			DriverManager.registerDriver(new oracle.jdbc.driver.OracleDriver());
+			this.s = s;
 
 			String url = "jdbc:oracle:thin:@class3.cs.pitt.edu:1521:dbclass";
 			connection = DriverManager.getConnection(url, username, password);
@@ -155,6 +156,8 @@ public class FaceSpaceManagement {
 				System.out.println(
 					"Please enter the ID of the friend you'd like to make: ");
 				friendID = s.nextInt();
+				System.out.println("***" + friendID);
+				//s.nextLine();
 
 				query = "Select name from profile where userID = ?";
 				prepStatement = connection.prepareStatement(query);
@@ -175,6 +178,7 @@ public class FaceSpaceManagement {
 						                   + ", is this correct? Enter 'yes' or 'no' without quotes");
 					userResponse = s.nextLine();
 					userResponse = s.nextLine();
+					System.out.println("***" + userResponse);
 					if (userResponse.equals("yes")) {
 						//Checks to make sure they're not already friends, returns to main menu
 						//if so.
@@ -196,6 +200,7 @@ public class FaceSpaceManagement {
 
 			System.out.println("Now enter the message you'd like to send along with the request: ");
 			message = s.nextLine();
+			System.out.println("***" + message);
 
 			query = "insert into pendingFriends values (?, ?, ?)";
 			prepStatement = connection.prepareStatement(query);

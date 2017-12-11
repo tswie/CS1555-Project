@@ -17,6 +17,7 @@ public class SocialPanther {
 
         System.out.print("Pick an option: ");
         choice = keyboard.nextInt();
+        keyboard.nextLine();
 
         switch(choice) {
 
@@ -39,6 +40,7 @@ public class SocialPanther {
 
         System.out.print("Pick an option: ");
         choice = keyboard.nextInt();
+        keyboard.nextLine();
 
         switch(choice) {
 
@@ -111,10 +113,13 @@ public class SocialPanther {
     System.out.println("Please enter your username and password to connect to the database.");
     System.out.print("Username : ");
     username = keyboard.nextLine();
+    System.out.println("***" + username);
     System.out.print("password : ");
     password = keyboard.nextLine();
+    System.out.println("***" + password);
 
-    fsm = new FaceSpaceManagement(username, password);
+    fsm = new FaceSpaceManagement(username, password, keyboard);
+    //fsm = new FaceSpaceManagement(username, password);
   }
 
   public static void logInMenu() {
