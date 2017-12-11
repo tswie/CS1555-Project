@@ -5,7 +5,7 @@ IMPORTANT: We had some REALLY weird last minute github issues merging versions t
 (11:58 PM) compiles and runs the transactions without issue, however Im not sure if my fixes merged properly as I
 forced the push with "git push origin +remote". I'm hoping that this meant that ALL of my files completely overwrote
 what's on the repo. If this isn't the case, please give us a chance to try to fix it, I will keep my last changed dates
-to right now in order to ensure that I can prove this is the case for me. 
+to right now in order to ensure that I can prove this is the case for me.
 
 First, go into your sqlplus database and initiate the database using the following commands(you can use your own db for this):
 @spdb.sql
@@ -61,6 +61,15 @@ friends list if you'd like more proof that it works. Messages require both invol
 ALTERNATIVELY
 Instead of logging in as admin, you can create your own profiles and have them interact. Simply choose Create New User
 from the main menu and you can set up interactions between them.
+
+
+Concurrency proof
+   We weren't quite sure how to do this, but if you go through, you can see that all of our transactions properly
+   only commit at the end, and that we only read committed data during each transaction, and the relevant select statements
+   have "for update" in order to ensure they can lock the data.
+
+SQL Injection
+    All of our inputs use the prepareStatement module to sanitize input
 
 
 
