@@ -57,12 +57,4 @@ Instead of logging in as admin, you can create your own profiles and have them i
 from the main menu and you can set up interactions between them.
 
 
-IMPORTANT: Before you do the next step, run @spdb.sql again and DO NOT run insert.sql, as this will conflict with the
-following inserts. 
-
-You can also type 'java SocialPanther < test.txt' and this will create a few users and interactions between them.
-In this case however, the results will just be the normal UI printouts which may be a bit hard to follow.
-In addition, the test.txt file only focuses on the interactions between users, such as directly sending messages/invites etc.
-Functions like displayTopMessages can simply be tested by going into the UI and selecting it yourself, as these are not
-user specific.
 
