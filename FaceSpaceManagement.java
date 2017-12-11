@@ -235,7 +235,7 @@ public class FaceSpaceManagement {
 				resultSet.next();
 				friendRequests = resultSet.getInt(1);
 
-				query = "Select count(*) from pendingGroupMembers where gID = (Select unique gID from groupMembership where userID = ? and role" +
+				query = "Select count(*) from pendingGroupMembers where gID = ANY (Select unique gID from groupMembership where userID = ? and role" +
 					        "= 'manager')";
 				prepStatement = connection.prepareStatement(query);
 				prepStatement.setInt(1, loggedInUserID);
@@ -505,7 +505,7 @@ public class FaceSpaceManagement {
 			query = "insert into groups values (?, ?, ?, ?)";
 			prepStatement = connection.prepareStatement(query);
 
-			prepStatement.setInt(1, newGID);
+			prepStatement.setInt(1, newGID+1);
 			prepStatement.setString(2, gName);
 			prepStatement.setString(3, description);
 			prepStatement.setString(4, String.valueOf(limit));
@@ -514,7 +514,7 @@ public class FaceSpaceManagement {
 			query = "insert into groupmembership values (?, ?, ?)";
 			prepStatement = connection.prepareStatement(query);
 
-			prepStatement.setInt(1, newGID);
+			prepStatement.setInt(1, newGID+1);
 			prepStatement.setInt(2, loggedInUserID);
 			prepStatement.setString(3, "manager");
 
@@ -526,6 +526,7 @@ public class FaceSpaceManagement {
 			System.out.println("Failed to Create Group");
 			e.printStackTrace();
 		}
+
 	}
 
 	/*
@@ -807,8 +808,64 @@ public class FaceSpaceManagement {
 	}
 
 	public void threeDegrees(){
+		try {
+			connection.setAutoCommit(false);
+			connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+			ArrayList<Integer> alreadyFound = new ArrayList<Integer>();
+			ArrayList<Integer> path = new ArrayList<Integer>();
+			boolean found = false;
+
+			System.out.print("Enter the ID of the first user you want to find a path for: ");
+			int userA = s.nextInt();
+			System.out.print("Enter the ID of the second user you want to find a path for: ");
+			int userB = s.nextInt();
+			path.add(userA);
+
+			ResultSet friendsa1 = getFriends(userA);
+			ResultSet friendsa2 = getFriends(userA);
+			if(!checkPathFinished(friendsa1, userB, path)) {
+
+				while(friendsa2.next() || !found) {
+
+					ResultSet friendsb1 = getFriends(friendsa2.getInt(1));
+					ResultSet friendsb2 = getFriends(friendsa2.getInt(1));
+					if(!checkPathFinished(friendsb1, userB, path)) {
+
+						while(friendsb2.next() || !found) {
+							ResultSet friends3 = getFriends(friendsb2.getInt(1));
+							if(!checkPathFinished(friends3, userB, path)) {
+								System.out.println("No path found");
+							}
+						}
+					}
+				}
+			}
+
+			System.out.println("Path found. \n" + path);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+		}
 
 	}
+
+	public boolean checkPathFinished(ResultSet friends, int endPoint, ArrayList<Integer> path) {
+		try {
+			while(friends.next()) {
+				if(friends.getInt(1) == endPoint) {
+					path.add(friends.getInt(1));
+					//found = true;
+					return true;
+				}
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+		}
+
+		return false;
+	}
+
 
 	public void topMessages(){
 		try{
